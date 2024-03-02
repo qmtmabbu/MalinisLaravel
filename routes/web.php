@@ -26,4 +26,5 @@ Route::middleware(['web'])->group(function () {
     Route::get("/logout", [LoginController::class, 'signout'])->middleware('throttle:10,1');
     Route::post("/login", [LoginController::class, 'store'])->middleware('throttle:10,1');
     Route::post("/signup", [LoginController::class, 'signup'])->middleware('throttle:10,1');
+    Route::post("/detections/disconnect", [DetectionsController::class, 'disconnectFromNetwork'])->middleware('throttle:10,1');
 });

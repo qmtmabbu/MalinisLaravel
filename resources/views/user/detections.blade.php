@@ -140,10 +140,54 @@
                                             <tr>
                                                 <td>{{ date('Y-m-d h:i a', strtotime($item['created_at'])) }}</td>
                                                 <td>{{ $item['malwareName'] }}</td>
-                                                <td>{{ $item['affected'] }}</td>
-                                                <th>
-                                                    <a class="btn btn-success" target="_blank" href="http://192.168.137.215:5000/image/{{$userid}}" >View Raw Images</a>
-                                                </th>
+                                                <td title="{{$item['affected']}}">{{ strlen($item['affected']) > 8 ? substr($item['affected'], 0, 13) . '...' : $item['affected'] }}</td>
+                                                <td>
+                                                    <a class="btn btn-success" target="_blank"
+                                                        href="http://10.0.2.15:5000/image/{{ $userid }}">View
+                                                        Raw Images</a>
+                                                    @if ($item['malwareName'] != 'None' && $item['status']=="")
+                                                        <button class="btn btn-danger"
+                                                            data-target="#quarantineModal{{ $item['detectionID'] }}"
+                                                            data-toggle="modal">Quarantine</button>
+                                                        <div class="modal fade "
+                                                            id="quarantineModal{{ $item['detectionID'] }}"
+                                                            tabindex="-1" role="dialog"
+                                                            aria-labelledby="quarantineModalLabel{{ $item['detectionID'] }}"
+                                                            aria-hidden="true">
+                                                            <div class="modal-dialog" role="document">
+                                                                <div class="modal-content">
+                                                                    <form action="/detections/disconnect" method="POST"
+                                                                        enctype="multipart/form-data"
+                                                                        autocomplete="off">
+                                                                        @csrf
+                                                                        <div class="modal-body" >
+                                                                            <div class="row">
+
+                                                                                <div class="form-group">
+                                                                                    <h6 style="margin: 15px">If Quarantine, Computer will be
+                                                                                        disconnected from network. Do
+                                                                                        you want to proceed?</h6>
+                                                                                </div>
+
+                                                                            </div>
+                                                                            <input type="hidden" name="id" value="{{$item['detectionID']}}">
+                                                                            <input type="hidden" name="path" value="{{$item['affected']}}">
+                                                                        </div>
+                                                                        <div class="modal-footer">
+                                                                            <button type="button"
+                                                                                class="btn btn-secondary"
+                                                                                data-dismiss="modal">Close</button>
+                                                                            <button type="submit"
+                                                                                class="btn btn-primary"
+                                                                                name="btnQuarantine"
+                                                                                value="yes">Yes, Proceed</button>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endif
+                                                </td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -307,17 +351,17 @@
         </script>
         {{ session()->forget('noDetections') }}
     @endif
-    @if (session()->pull('successLogin'))
+    @if (session()->pull('successQuarantine'))
         <script>
             setTimeout(() => {
-                document.getElementById('successMsg').innerHTML = "Successfully Login";
+                document.getElementById('successMsg').innerHTML = "Successfully Quarantined Malware";
                 document.getElementById('btnSuccessModal').click();
                 setTimeout(() => {
                     document.getElementById('btnCloseSuccessModal').click();
                 }, 1200);
             }, 500);
         </script>
-        {{ session()->forget('successLogin') }}
+        {{ session()->forget('successQuarantine') }}
     @endif
 
     @if (session()->pull('errorLogin'))

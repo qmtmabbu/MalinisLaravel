@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -26,19 +28,18 @@ class DetectionsController extends Controller
             $userID = $users['userID'];
 
             $fromLoading = $request->query('fromLoading');
+            $query = DB::table('detections')->where('userID', '=', $userID)->get();
+            $data = json_decode($query, true);
             if ($fromLoading) {
-                $query = DB::table('detections')->where('userID', '=', $userID)->get();
-                $data = json_decode($query, true);
+
                 if (count($data) <= 0) {
                     session()->put('noDetections', true);
-                } else {
-                    return view('user.detections', ['detections' => $data, 'userid' => $userID]);
                 }
             }
 
 
 
-            return view('user.detections');
+            return view('user.detections', ['detections' => count($data) > 0 ? $data : [], 'userid' => $userID]);
         }
         return redirect("/");
     }
@@ -109,26 +110,49 @@ class DetectionsController extends Controller
         //
     }
 
-    private function callApi(string $id, string $imagePath): void
+    public function disconnectFromNetwork(Request $request)
     {
-        $client = new Client();
-        $response = $client->post('http://localhost:5000/detect', [
-            'multipart' => [
-                [
-                    'name' => 'id',
-                    'contents' => $id
-                ],
-                [
-                    'name' => 'image_url',
-                    'contents' => $imagePath
-                ],
-                [
-                    'name' => 'storagePath',
-                    'contents' => $_SERVER['DOCUMENT_ROOT'] . "/public" . '/storage/results'
-                ]
-            ]
-        ]);
 
-        // var_dump($response->getBody()->getContents());
+        if (session()->exists("users")) {
+            $users = session()->pull("users");
+            session()->put("users", $users);
+
+            if ($users['userType'] != 2) {
+                return redirect("/");
+            }
+            
+            
+            $path = $request->path;
+            $id = $request->id;
+
+            $response = $this->callApi($path);
+            if ($response != 500) {
+                $updateCount = DB::table('detections')->where('detectionID', '=', $id)->update(['status' => 'deleted']);
+                session()->put("successQuarantine", true);
+            } else {
+                session()->put("errorQuarantine", true);
+            }
+
+
+            return redirect("/detections");
+        }
+        return redirect("/");
+    }
+
+    private function callApi(string $filePath)
+    {
+        try {
+            $client = new Client();
+            $response = $client->get('http://10.0.2.15:5000/delete_file/' . $filePath);
+            $statusCode = $response->getStatusCode();
+            $body = $response->getBody()->getContents();
+            error_log('API Response Status Code: ' . $statusCode);
+            error_log('API Response Body: ' . $body);
+            return $statusCode;
+        } catch (RequestException $e) {
+            // Handle request exceptions (e.g., connection errors, timeouts)
+            error_log('API Request Exception: ' . $e->getMessage());
+            return 500;
+        }
     }
 }

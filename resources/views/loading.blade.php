@@ -163,7 +163,7 @@
                     clearInterval(interval);
                     results.innerHTML = "<h2>Processing Results: 100%</h2>";
                     // Show packet sniffing logs after progress completion
-                    document.getElementById('sniffing-logs').classList.add('show');
+                    // document.getElementById('sniffing-logs').classList.add('show');
                     // setTimeout(() => {
                     //     window.location = "/detections?fromLoading=true";
                     // }, 2500);

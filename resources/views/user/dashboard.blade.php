@@ -165,7 +165,7 @@
             <div class="row">
                 <div class="col-lg-12">
                     <br>
-                    <h2>Sniff Data</h2>
+                    <h2>Network Traffic</h2>
                     <div class="col-lg-12" id="sniffData"></div>
                 </div>
             </div>

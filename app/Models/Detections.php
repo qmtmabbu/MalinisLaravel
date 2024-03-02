@@ -16,6 +16,7 @@ class Detections extends Model
         'userID',
         'malwareName',
         'affected',
+        'status',
         "created_at",
     ];
 }
