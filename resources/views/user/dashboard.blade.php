@@ -14,6 +14,8 @@
     <link rel="stylesheet" type="text/css" href="assets/css/templatemo-art-factory.css">
     <link rel="stylesheet" type="text/css" href="assets/css/owl-carousel.css">
     <link rel="stylesheet" type="text/css" href="assets/css/ownstyle.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sen:wght@600&display=swap" rel="stylesheet">
     <style>
         .background-header {
@@ -34,7 +36,7 @@
         }
 
         body {
-            font-family: 'Sen', sans-serif;
+            font-family: 'Sen', sans-serif !important;
         }
 
         footer .social li a {
@@ -166,8 +168,24 @@
                 <div class="col-lg-12">
                     <br>
                     <h2>Network Traffic</h2>
-                    <div class="col-lg-12" id="sniffData"></div>
+                    <br>
+                    <div class="form-group">
+                        <select class="form-control mr-2" style="float: left; width: 200px;" required name="filter"
+                            id="selectFilter">
+                            <option value="All">All</option>
+                            <option value="Data">Data</option>
+                            <option value="Audio">Audio</option>
+                            <option value="Video">Video</option>
+                        </select>
+                        <button class="btn btn-success text-white" style="float: left"
+                            onclick="fetchFilter()">Submit</button>
+                    </div>
+
+
                 </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12" id="sniffData"></div>
             </div>
         </div>
     </section>
@@ -301,11 +319,13 @@
     </div>
     <script>
         // Fetch sniff data every 1 minute
-        setInterval(fetchSniffData, 60000);
+        let intervalId = setInterval(fetchSniffData, 60000);
+        let filter = "All";
+        var top20Sniff = [];
         fetchSniffData();
 
         function fetchSniffData() {
-            fetch('http://192.168.137.215:5000/sniff')
+            fetch('http://10.0.2.15:5000/sniff')
                 .then(response => response.text())
                 .then(data => {
                     updateSniffData(data);
@@ -321,6 +341,18 @@
             // Split the sniff data by new lines
             var sniffList = sniffData.split('\n');
 
+            if (filter == "Video") {
+                sniffList = sniffList.filter(function(item) {
+                    return item.includes("Packet Type: Video");
+                });
+            } else if (filter == "Audio") {
+                sniffList = sniffList.filter(function(item) {
+                    return item.includes("Packet Type: Audio");
+                });
+            }
+
+            
+
             // Sort the sniff data by date
             sniffList.sort(function(a, b) {
                 var dateA = getDateFromSniff(a);
@@ -329,7 +361,7 @@
             });
 
             // Get only the top 20 items of the sniff data
-            var top20Sniff = sniffList.slice(0, 20);
+            top20Sniff = sniffList.slice(0, 20);
 
             // Create a new list item for each sniff item and append it to the container
             top20Sniff.forEach(function(sniffItem, index) {
@@ -337,18 +369,57 @@
                 var mItem = sniffItem.replace(";;", "- ");
                 var pTypeSlice = mItem.split("|||");
                 let prefix = "";
-                if (pTypeSlice[0] === "Packet Type: No Raw Layer") {
-                    prefix = pTypeSlice[0] + ", ";
-                } else if (pTypeSlice[0] === "Packet Type: Non-Image") {
-                    prefix = `<span style="color: blue !important;">${pTypeSlice[0]}</span>, `;
-                } else if (pTypeSlice[0] === "Packet Type: Image") {
-                    prefix = `<span style="color: green !important;">${pTypeSlice[0]}</span>, `;
+                if (filter === "All") {
+                    if (pTypeSlice[0] === "Packet Type: No Raw Layer") {
+                        prefix = "<br>" + pTypeSlice[0] + ", ";
+                    } else if (pTypeSlice[0] === "Packet Type: Non-Image") {
+                        prefix = `<br><span style="color: blue !important;">Packet Type: Data</span>, `;
+                    } else if (pTypeSlice[0] === "Packet Type: Image") {
+                        prefix = `<br><span style="color: green !important;">${pTypeSlice[0]}</span>, `;
+                    }
+                    let whole = prefix + pTypeSlice[1];
+                    listItem.innerHTML = whole;
+                    listItem.classList.add('sniff-item');
+                    listItem.style.transitionDelay = (index * 0.5) + 's';
+                    sniffContainer.appendChild(listItem);
+                } else if (filter === "Data") {
+                    if (pTypeSlice[0] === "Packet Type: Non-Image") {
+                        prefix = `<br><span style="color: blue !important;">Packet Type: Data</span>, `;
+                        let whole = prefix + pTypeSlice[1];
+                        listItem.innerHTML = whole;
+                        listItem.classList.add('sniff-item');
+                        listItem.style.transitionDelay = (index * 0.5) + 's';
+                        sniffContainer.appendChild(listItem);
+                    } else if (pTypeSlice[0] === "Packet Type: Image") {
+                        prefix = `<br><span style="color: blue !important;">Packet Type: Data</span>, `;
+                        let whole = prefix + pTypeSlice[1];
+                        listItem.innerHTML = whole;
+                        listItem.classList.add('sniff-item');
+                        listItem.style.transitionDelay = (index * 0.5) + 's';
+                        sniffContainer.appendChild(listItem);
+                    }
+
+                } else if (filter === "Audio") {
+                    if (pTypeSlice[0] === "Packet Type: Audio") {
+                        prefix = `<br><span style="color: orange !important;">${pTypeSlice[0]}</span>, `;
+                        let whole = prefix + pTypeSlice[1];
+                        listItem.innerHTML = whole;
+                        listItem.classList.add('sniff-item');
+                        listItem.style.transitionDelay = (index * 0.5) + 's';
+                        sniffContainer.appendChild(listItem);
+                    }
+                } else if (filter === "Video") {
+                    if (pTypeSlice[0] === "Packet Type: Video") {
+                        prefix = `<br><span style="color: red !important;">${pTypeSlice[0]}</span>, `;
+                        let whole = prefix + pTypeSlice[1];
+                        listItem.innerHTML = whole;
+                        listItem.classList.add('sniff-item');
+                        listItem.style.transitionDelay = (index * 0.5) + 's';
+                        sniffContainer.appendChild(listItem);
+                    }
                 }
-                let whole = prefix + pTypeSlice[1];
-                listItem.innerHTML = whole;
-                listItem.classList.add('sniff-item');
-                listItem.style.transitionDelay = (index * 0.5) + 's';
-                sniffContainer.appendChild(listItem);
+
+
 
                 // Triggering reflow to restart animation
                 void listItem.offsetWidth;
@@ -360,6 +431,18 @@
             var parts = sniffLine.split(';;');
             var dateString = parts[1];
             return new Date(dateString);
+        }
+
+        function fetchFilter() {
+            let filterData = document.getElementById('selectFilter');
+            filter = filterData.value;
+            console.log(filter);
+            clearInterval(intervalId);
+            var sniffContainer = document.getElementById('sniffData');
+            // Clear the existing sniff data
+            sniffContainer.innerHTML = ''
+            intervalId = setInterval(fetchSniffData, 60000);
+            fetchSniffData();
         }
     </script>
 

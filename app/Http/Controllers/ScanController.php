@@ -17,18 +17,25 @@ class ScanController extends Controller
                 return redirect("/");
             }
 
-            $this->callApi($users['userID']);
-            sleep(15);
-            return view('loading', ['userID' => $users['userID']]);
+            $uuid = $this->callApi($users['userID']);
+            // $uuid = "Fc49zv";
+            // sleep(15);
+            return view('user.loading', ['userID' => $users['userID'], 'uuid' => $uuid]);
         }
         return redirect("/");
     }
 
-    private function callApi(string $id): void
+    private function callApi(string $id): string
     {
         $client = new Client();
-        $response = $client->get('http://192.168.137.215:5000/detect?id=' . $id);
-
-        // var_dump($response->getBody()->getContents());
+        $uuid = "";
+        $response = $client->get('http://10.0.2.15:5000/detect?id=' . $id);
+        if ($response->getStatusCode() == 200) {
+            $result = json_decode($response->getBody()->getContents(), true);
+            $uuid = $result['uuid'];
+        } else {
+            $uuid = "";
+        }
+        return  $uuid;
     }
 }

@@ -120,7 +120,7 @@
             while (retries < maxRetries) {
                 try {
                     const timestamp = Date.now(); // Generate a unique timestamp
-                    const response = await fetch(`http://192.168.137.215:5000/logs/${userID}.txt?cache=${timestamp}`);
+                    const response = await fetch(`http://10.0.2.15:5000/logs/${userID}.txt?cache=${timestamp}`);
 
                     if (response.ok) {
                         const data = await response.text();

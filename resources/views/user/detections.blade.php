@@ -140,15 +140,20 @@
                                             <tr>
                                                 <td>{{ date('Y-m-d h:i a', strtotime($item['created_at'])) }}</td>
                                                 <td>{{ $item['malwareName'] }}</td>
-                                                <td title="{{$item['affected']}}">{{ strlen($item['affected']) > 8 ? substr($item['affected'], 0, 13) . '...' : $item['affected'] }}</td>
+                                                <td title="{{ $item['affected'] }}">
+                                                    {{ strlen($item['affected']) > 8 ? substr($item['affected'], 0, 13) . '...' : $item['affected'] }}
+                                                </td>
                                                 <td>
-                                                    <a class="btn btn-success" target="_blank"
-                                                        href="http://10.0.2.15:5000/image/{{ $userid }}">View
-                                                        Raw Images</a>
-                                                    @if ($item['malwareName'] != 'None' && $item['status']=="")
+                                                    {{-- <a class="btn btn-success" target="_blank"
+                                                        href="http://10.0.2.15:5000/image/{{ $userid }}/{{ $item['logid'] }}">View
+                                                        Raw Images</a> --}}
+                                                    <a href="http://10.0.2.15:5000/logs/detect_output_{{ $item['logid'] }}.txt?isLog=true"
+                                                        target="_blank" class="btn btn-dark"><img src="/logs.svg"
+                                                            alt="" srcset="" title="Logs"></a>
+                                                    @if ($item['malwareName'] != 'None' && $item['status'] == '')
                                                         <button class="btn btn-danger"
                                                             data-target="#quarantineModal{{ $item['detectionID'] }}"
-                                                            data-toggle="modal">Quarantine</button>
+                                                            data-toggle="modal" title="Quarantine">Remove Affected File</button>
                                                         <div class="modal fade "
                                                             id="quarantineModal{{ $item['detectionID'] }}"
                                                             tabindex="-1" role="dialog"
@@ -156,22 +161,25 @@
                                                             aria-hidden="true">
                                                             <div class="modal-dialog" role="document">
                                                                 <div class="modal-content">
-                                                                    <form action="/detections/disconnect" method="POST"
-                                                                        enctype="multipart/form-data"
+                                                                    <form action="/detections/disconnect"
+                                                                        method="POST" enctype="multipart/form-data"
                                                                         autocomplete="off">
                                                                         @csrf
-                                                                        <div class="modal-body" >
+                                                                        <div class="modal-body">
                                                                             <div class="row">
 
                                                                                 <div class="form-group">
-                                                                                    <h6 style="margin: 15px">If Quarantine, Computer will be
+                                                                                    <h6 style="margin: 15px">If
+                                                                                        Quarantine, Computer will be
                                                                                         disconnected from network. Do
                                                                                         you want to proceed?</h6>
                                                                                 </div>
 
                                                                             </div>
-                                                                            <input type="hidden" name="id" value="{{$item['detectionID']}}">
-                                                                            <input type="hidden" name="path" value="{{$item['affected']}}">
+                                                                            <input type="hidden" name="id"
+                                                                                value="{{ $item['detectionID'] }}">
+                                                                            <input type="hidden" name="path"
+                                                                                value="{{ $item['affected'] }}">
                                                                         </div>
                                                                         <div class="modal-footer">
                                                                             <button type="button"
@@ -181,6 +189,53 @@
                                                                                 class="btn btn-primary"
                                                                                 name="btnQuarantine"
                                                                                 value="yes">Yes, Proceed</button>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @else
+                                                        <button class="btn btn-danger"
+                                                            data-target="#deleteModal{{ $item['detectionID'] }}"
+                                                            data-toggle="modal" title="Delete"><img src="/delete.svg"
+                                                                alt="" srcset=""></button>
+                                                        <div class="modal fade "
+                                                            id="deleteModal{{ $item['detectionID'] }}" tabindex="-1"
+                                                            role="dialog"
+                                                            aria-labelledby="deleteModalLabel{{ $item['detectionID'] }}"
+                                                            aria-hidden="true">
+                                                            <div class="modal-dialog" role="document">
+                                                                <div class="modal-content">
+                                                                    <form
+                                                                        action="{{ route('detections.destroy', ['detection' => $item['detectionID']]) }}"
+                                                                        method="POST" enctype="multipart/form-data"
+                                                                        autocomplete="off">
+                                                                        @method('delete')
+                                                                        @csrf
+                                                                        <div class="modal-body">
+                                                                            <div class="row">
+
+                                                                                <div class="form-group">
+                                                                                    <h6 style="margin: 15px">If
+                                                                                        Deleted, Record will not be
+                                                                                        restored. Do
+                                                                                        you want to proceed?</h6>
+                                                                                </div>
+
+                                                                            </div>
+                                                                            <input type="hidden" name="id"
+                                                                                value="{{ $item['detectionID'] }}">
+                                                                            <input type="hidden" name="path"
+                                                                                value="{{ $item['affected'] }}">
+                                                                        </div>
+                                                                        <div class="modal-footer">
+                                                                            <button type="button"
+                                                                                class="btn btn-secondary"
+                                                                                data-dismiss="modal">Close</button>
+                                                                            <button type="submit"
+                                                                                class="btn btn-primary"
+                                                                                name="btnDelete" value="yes">Yes,
+                                                                                Proceed</button>
                                                                         </div>
                                                                     </form>
                                                                 </div>
@@ -362,6 +417,31 @@
             }, 500);
         </script>
         {{ session()->forget('successQuarantine') }}
+    @endif
+    @if (session()->pull('successDeleted'))
+        <script>
+            setTimeout(() => {
+                document.getElementById('successMsg').innerHTML = "Successfully Deleted Record";
+                document.getElementById('btnSuccessModal').click();
+                setTimeout(() => {
+                    document.getElementById('btnCloseSuccessModal').click();
+                }, 1200);
+            }, 500);
+        </script>
+        {{ session()->forget('successDeleted') }}
+    @endif
+
+    @if (session()->pull('errorDelete'))
+        <script>
+            setTimeout(() => {
+                document.getElementById('errorMsg').innerHTML = "Failed To Delete Record, Please Try Again Later";
+                document.getElementById('btnErrorModal').click();
+                setTimeout(() => {
+                    document.getElementById('btnCloseErrorModal').click();
+                }, 1500);
+            }, 500);
+        </script>
+        {{ session()->forget('errorDelete') }}
     @endif
 
     @if (session()->pull('errorLogin'))

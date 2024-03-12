@@ -19,6 +19,7 @@ class CreateDetectionsTable extends Migration
             $table->string('malwareName')->nullable(false);
             $table->string('affected')->nullable(false);
             $table->string('status')->nullable(true);
+            $table->string('logid')->nullable(true);
             $table->timestamps();
         });
     }

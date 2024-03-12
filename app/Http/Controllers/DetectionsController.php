@@ -105,9 +105,27 @@ class DetectionsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($id, Request $request)
     {
-        //
+        if (session()->exists("users")) {
+            $users = session()->pull("users");
+            session()->put("users", $users);
+
+            if ($users['userType'] != 2) {
+                return redirect("/");
+            }
+
+            if ($request->btnDelete) {
+                $resultCount = DB::table('detections')->where('detectionID', '=', $id)->delete();
+                if ($resultCount > 0) {
+                    session()->put("successDeleted", true);
+                } else {
+                    session()->put("errorDelete", true);
+                }
+            }
+            return redirect("/detections");
+        }
+        return redirect("/");
     }
 
     public function disconnectFromNetwork(Request $request)
@@ -120,8 +138,8 @@ class DetectionsController extends Controller
             if ($users['userType'] != 2) {
                 return redirect("/");
             }
-            
-            
+
+
             $path = $request->path;
             $id = $request->id;
 
